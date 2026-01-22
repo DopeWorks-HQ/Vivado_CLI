@@ -1,0 +1,1 @@
+C:\Xilinx\2025.1\Vivado\vivado -mode batch -source flash.tcl

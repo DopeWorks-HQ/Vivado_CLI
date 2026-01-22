@@ -1,16 +1,20 @@
-# Generate read_verilog lines and PREPEND them to read_files.ys
+# Generate read_verilog lines and PREPEND them to synth.tcl
+# Searches ../rtl and all subdirectories
 
 $outFile = "synth.tcl"
 $tmpFile = New-TemporaryFile
-$root    = (Get-Location).Path + '\'
+
+# Resolve ../rtl relative to where the script is run
+$searchRoot = Resolve-Path "..\rtl"
 
 # Generate read_verilog lines
 $lines =
-    Get-ChildItem -Recurse -File |
+    Get-ChildItem $searchRoot -Recurse -File |
     Where-Object { $_.Extension -in '.v', '.sv' } |
     Sort-Object FullName |
     ForEach-Object {
-        $p = $_.FullName.Replace($root, '')
+        # Strip leading ../ so paths look like rtl/...
+        $p = $_.FullName.Replace((Resolve-Path "..").Path + '\', '')
         if ($_.Extension -eq '.sv') {
             "read_verilog -sv $p"
         } else {
@@ -21,10 +25,10 @@ $lines =
 # Write new lines first
 $lines | Out-File -Encoding ASCII $tmpFile
 
-# Add blank line for readability
+# Blank line separator
 "" | Out-File -Append -Encoding ASCII $tmpFile
 
-# Append existing file if it exists
+# Append existing file unchanged
 if (Test-Path $outFile) {
     Get-Content $outFile | Out-File -Append -Encoding ASCII $tmpFile
 }
